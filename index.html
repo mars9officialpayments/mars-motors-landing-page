@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Defense Tech Customs™ - M-Hero 917 by Bangladesh AI Research Institute</title>
+
+    <script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.155.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.155.0/examples/jsm/"
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Orbitron:wght@700&display=swap');
+        :root {
+            --dark-bg: #0d0d0d;
+            --main-bg: #1a1a1a;
+            --accent-blue: #00bfff;
+            --accent-green: #39ff14;
+            --text-color: #f0f0f0;
+            --font-orbitron: 'Orbitron', sans-serif;
+            --font-montserrat: 'Montserrat', sans-serif;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: var(--font-montserrat);
+            color: var(--text-color);
+        }
+
+        body, html {
+            height: 100%;
+            overflow: hidden;
+            background-color: var(--dark-bg);
+        }
+
+        .video-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: -1;
+            opacity: 0.2;
+        }
+
+        header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 20px 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            border-bottom: 2px solid var(--accent-blue);
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: 700;
+            font-family: var(--font-orbitron);
+            color: var(--accent-blue);
+            text-shadow: 0 0 10px var(--accent-blue);
+        }
+        .main-nav ul { display: flex; list-style: none; }
+        .main-nav a, .header-actions a {
+            padding: 10px 15px;
+            text-decoration: none;
+            transition: color 0.3s, text-shadow 0.3s;
+        }
+        .main-nav a:hover, .header-actions a:hover {
+            color: var(--accent-blue);
+            text-shadow: 0 0 5px var(--accent-blue);
+        }
+
+        .hero-section {
+            display: flex;
+            height: 100vh;
+            justify-content: center;
+            align-items: center;
+            padding-top: 80px;
+            position: relative;
+        }
+
+        .vehicle-display-area {
+            position: relative;
+            flex: 2;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #vehicle-3d-viewer {
+            width: 100%;
+            height: 100%;
+            cursor: grab;
+        }
+        #vehicle-3d-viewer:active { cursor: grabbing; }
+
+        .ai-customization-hud, .blueprint-hud {
+            position: absolute;
+            top: 15%;
+            left: 5%;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            pointer-events: none;
+            transition: opacity 0.5s ease-in-out;
+            opacity: 0;
+        }
+
+        .ai-feature-card, .blueprint-item {
+            background: rgba(57, 255, 20, 0.1);
+            border-left: 3px solid var(--accent-green);
+            padding: 10px 15px;
+            border-radius: 5px;
+            backdrop-filter: blur(5px);
+            box-shadow: 0 0 15px rgba(57, 255, 20, 0.3);
+        }
+
+        .ai-feature-card.active, .blueprint-hud.active {
+            opacity: 1;
+        }
+        
+        .blueprint-item {
+            background: rgba(0, 191, 255, 0.1);
+            border-left: 3px solid var(--accent-blue);
+            box-shadow: 0 0 15px rgba(0, 191, 255, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .sidebar-info-panel {
+            flex: 1;
+            background: rgba(26, 26, 26, 0.9);
+            padding: 30px;
+            border-radius: 8px;
+            backdrop-filter: blur(5px);
+            max-height: calc(100vh - 120px);
+            overflow-y: auto;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .vehicle-title {
+            font-size: 38px;
+            margin-bottom: 5px;
+            font-family: var(--font-orbitron);
+            color: var(--accent-blue);
+        }
+
+        .tagline {
+            font-size: 16px;
+            color: var(--text-color);
+            margin-bottom: 20px;
+        }
+        
+        .toggle-switch-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .toggle-switch-container label {
+            font-weight: bold;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+        }
+        
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #333;
+            transition: .4s;
+            border-radius: 34px;
+        }
+        
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        
+        input:checked + .slider {
+            background-color: var(--accent-blue);
+        }
+        
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+        
+        .tech-specs-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-top: 20px;
+            font-size: 14px;
+        }
+        .spec-item {
+            display: flex;
+            flex-direction: column;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .spec-label { color: #aaa; }
+        .spec-value { font-weight: 700; color: var(--accent-green); }
+
+        .package-option {
+            background: #2b2b2b;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            border: 2px solid transparent;
+            cursor: pointer;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+        .package-option:hover { border-color: var(--accent-blue); }
+        .package-option.active {
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 10px rgba(0, 123, 255, 0.5);
+        }
+
+        .call-to-action {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .call-to-action button {
+            padding: 12px 20px;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+            font-weight: 700;
+        }
+        .configure-build-btn {
+            background-color: var(--accent-blue);
+            color: var(--dark-bg);
+        }
+        .request-test-drive-btn {
+            background-color: transparent;
+            border: 1px solid var(--text-color);
+        }
+
+        footer {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px 5%;
+        }
+        .footer-bottom {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .social-links a {
+            margin-right: 15px;
+            color: var(--accent-blue);
+            font-size: 20px;
+        }
+        
+        .creator-info {
+            text-align: right;
+            font-size: 12px;
+            color: #888;
+        }
+
+        @media (max-width: 1024px) {
+            .hero-section { flex-direction: column; }
+            .sidebar-info-panel {
+                width: 90%;
+                max-width: 90%;
+                margin: 20px 0;
+            }
+            .tech-specs-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+
+        let scene, camera, renderer, vehicle, modelRotation = 0;
+        let isDragging = false, previousMousePosition = { x: 0, y: 0 };
+        const loadingManager = new THREE.LoadingManager();
+        const loader = new GLTFLoader(loadingManager);
+
+        const models = {
+            'ai-customized': 'assets/m_hero_917_lowpoly.glb',
+            'drone-surveillance': 'assets/gdu_drone.glb',
+            'drone-buster': 'assets/drone_buster.glb'
+        };
+
+        let currentPackage = 'ai-customized';
+        let isWireframeMode = false;
+        let originalMaterials = new Map();
+        
+        const aiFeatures = {
+            'ai-customized': [
+                { title: 'AI Performance Tune', desc: 'Active Torque Vectoring & Dynamic Chassis Control' },
+                { title: 'Cybernetic HMI Suite', desc: '15.6" Central Display & 12.3" Instrument Cluster' },
+                { title: 'M-Hero All-Terrain System', desc: 'Intelligent Off-Road Modes: Snow, Mud, Sand, Rock' }
+            ],
+            'drone-surveillance': [
+                { title: 'GDU Military Grade Drone', desc: '15km Range, 6km Operational Height' },
+                { title: 'Real-time Threat Analysis', desc: 'AI-powered object and terrain detection' }
+            ],
+            'drone-buster': [
+                { title: 'Integrated Jamming Module', desc: 'High-power, directional signal suppression' },
+                { title: 'Automated Target Acquisition', desc: 'AI-assisted threat neutralization' }
+            ]
+        };
+
+        const blueprintFeatures = {
+            'ai-customized': [
+                { title: 'Chassis Integrity', desc: '100% Structural Hardened Steel Frame' },
+                { title: 'Power Core', desc: '142.7 kWh Ternary Lithium Battery' },
+                { title: 'Subsystems', desc: 'Quad-Motor Drivetrain' }
+            ]
+        };
+
+        function init() {
+            const container = document.getElementById('vehicle-3d-viewer');
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            container.appendChild(renderer.domElement);
+
+            const ambientLight = new THREE.AmbientLight(0xffffff, 1);
+            scene.add(ambientLight);
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 2);
+            directionalLight.position.set(5, 5, 5);
+            scene.add(directionalLight);
+
+            camera.position.set(0, 1, 3);
+            camera.lookAt(0, 0, 0);
+
+            loadModel('ai-customized');
+
+            window.addEventListener('resize', onWindowResize, false);
+            addEventListeners();
+            animate();
+        }
+
+        function loadModel(packageType) {
+            if (vehicle) {
+                scene.remove(vehicle);
+            }
+
+            loader.load(models[packageType], (gltf) => {
+                vehicle = gltf.scene;
+                vehicle.scale.set(1.5, 1.5, 1.5);
+                scene.add(vehicle);
+                currentPackage = packageType;
+                
+                originalMaterials.clear();
+                vehicle.traverse((child) => {
+                    if (child.isMesh) {
+                        if (Array.isArray(child.material)) {
+                            originalMaterials.set(child, child.material.slice());
+                        } else {
+                            originalMaterials.set(child, child.material);
+                        }
+                    }
+                });
+
+                if (isWireframeMode) {
+                    toggleWireframe();
+                }
+
+                updateHud(currentPackage);
+            }, undefined, (error) => {
+                console.error(error);
+            });
+        }
+        
+        function toggleWireframe() {
+            isWireframeMode = !isWireframeMode;
+            const wireframeHud = document.querySelector('.blueprint-hud');
+            const aiHud = document.querySelector('.ai-customization-hud');
+
+            if (isWireframeMode) {
+                wireframeHud.classList.add('active');
+                aiHud.classList.remove('active');
+
+                const blueprintMaterial = new THREE.LineBasicMaterial({
+                    color: 0x00bfff,
+                    linewidth: 2 // This may not work on all platforms
+                });
+                
+                vehicle.traverse((child) => {
+                    if (child.isMesh) {
+                        child.material = blueprintMaterial;
+                    }
+                });
+                
+            } else {
+                wireframeHud.classList.remove('active');
+                aiHud.classList.add('active');
+
+                vehicle.traverse((child) => {
+                    if (child.isMesh) {
+                        child.material = originalMaterials.get(child);
+                    }
+                });
+            }
+        }
+
+        function updateHud(packageType) {
+            const aiHudContainer = document.querySelector('.ai-customization-hud');
+            aiHudContainer.innerHTML = '';
+            aiFeatures[packageType].forEach(feature => {
+                const card = document.createElement('div');
+                card.classList.add('ai-feature-card');
+                card.innerHTML = `<h3>${feature.title}</h3><p>${feature.desc}</p>`;
+                aiHudContainer.appendChild(card);
+            });
+            setTimeout(() => {
+                if (!isWireframeMode) {
+                    aiHudContainer.classList.add('active');
+                }
+            }, 100);
+
+            const blueprintHudContainer = document.querySelector('.blueprint-hud');
+            blueprintHudContainer.innerHTML = '';
+            if (blueprintFeatures[packageType]) {
+                blueprintFeatures[packageType].forEach(feature => {
+                    const item = document.createElement('div');
+                    item.classList.add('blueprint-item');
+                    item.innerHTML = `<i class="fas fa-microchip"></i><h3>${feature.title}</h3><p>${feature.desc}</p>`;
+                    blueprintHudContainer.appendChild(item);
+                });
+            }
+        }
+
+        function addEventListeners() {
+            const container = document.getElementById('vehicle-3d-viewer');
+            container.addEventListener('mousedown', onMouseDown, false);
+            container.addEventListener('mouseup', onMouseUp, false);
+            container.addEventListener('mousemove', onMouseMove, false);
+            container.addEventListener('mouseleave', onMouseUp, false);
+            document.getElementById('wireframe-toggle').addEventListener('change', toggleWireframe);
+
+            document.querySelectorAll('.package-option').forEach(option => {
+                option.addEventListener('click', () => {
+                    document.querySelectorAll('.package-option').forEach(p => p.classList.remove('active'));
+                    option.classList.add('active');
+                    loadModel(option.dataset.package);
+                });
+            });
+        }
+
+        function onMouseDown(event) {
+            isDragging = true;
+            previousMousePosition.x = event.clientX;
+        }
+
+        function onMouseUp(event) {
+            isDragging = false;
+        }
+
+        function onMouseMove(event) {
+            if (!isDragging) return;
+            const deltaX = event.clientX - previousMousePosition.x;
+            modelRotation += deltaX * 0.005;
+            previousMousePosition.x = event.clientX;
+        }
+
+        function onWindowResize() {
+            const container = document.getElementById('vehicle-3d-viewer');
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            if (vehicle) {
+                vehicle.rotation.y = modelRotation;
+            }
+            renderer.render(scene, camera);
+        }
+
+        init();
+    </script>
+</head>
+<body>
+    <video class="video-bg" autoplay muted loop src="assets/background_vfx.mp4"></video>
+
+    <header>
+        <div class="logo">Defense Tech Customs™</div>
+        <nav class="main-nav">
+            <ul>
+                <li><a href="#">PLATFORMS</a></li>
+                <li><a href="#">R&D</a></li>
+                <li><a href="#">SERVICES</a></li>
+                <li><a href="#">SOLUTIONS</a></li>
+            </ul>
+        </nav>
+        <div class="header-actions">
+            <a href="#">Partnerships</a>
+            <a href="#">Contact Us</a>
+        </div>
+    </header>
+
+    <main class="hero-section">
+        <div class="vehicle-display-area">
+            <div id="vehicle-3d-viewer"></div>
+            <div class="ai-customization-hud"></div>
+            <div class="blueprint-hud"></div>
+        </div>
+        <aside class="sidebar-info-panel">
+            <h1 class="vehicle-title">M-Hero 917</h1>
+            <p class="tagline">Engineered by Bangladesh AI Research Institute</p>
+
+            <div class="toggle-switch-container">
+                <label for="wireframe-toggle">Schematic View</label>
+                <label class="switch">
+                    <input type="checkbox" id="wireframe-toggle">
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <div class="tech-specs-grid">
+                <div class="spec-item"><span class="spec-label">Power (BEV)</span><span class="spec-value">800 kW / 1,088 hp</span></div>
+                <div class="spec-item"><span class="spec-label">Torque</span><span class="spec-value">1,400 N·m</span></div>
+                <div class="spec-item"><span class="spec-label">0-100 km/h</span><span class="spec-value">4.2 seconds</span></div>
+                <div class="spec-item"><span class="spec-label">Wading Depth</span><span class="spec-value">900 mm</span></div>
+                <div class="spec-item"><span class="spec-label">Curb Weight</span><span class="spec-value">3,293 kg (BEV)</span></div>
+                <div class="spec-item"><span class="spec-label">Battery Capacity</span><span class="spec-value">142.7 kWh (BEV)</span></div>
+                <div class="spec-item"><span class="spec-label">Ground Clearance</span><span class="spec-value">221-326 mm</span></div>
+                <div class="spec-item"><span class="spec-label">Turning Radius</span><span class="spec-value">5.1 meters (Crab Walk)</span></div>
+            </div>
+
+            <div class="package-selection">
+                <h2>Defense Packages:</h2>
+                <div class="package-option active" data-package="ai-customized">
+                    <h3>AI-Powered Tactical Vehicle</h3>
+                    <p>$1.5 Million USD</p>
+                    <ul>
+                        <li><i class="fas fa-check"></i> Integrated AI Driver Assistance</li>
+                        <li><i class="fas fa-check"></i> M-Hero All-Terrain System (MATS)</li>
+                        <li><i class="fas fa-check"></i> Advanced Cybernetic Cockpit</li>
+                    </ul>
+                </div>
+                <div class="package-option" data-package="drone-surveillance">
+                    <h3>Drone-Enabled Reconnaissance</h3>
+                    <p>$1.7 Million USD</p>
+                    <ul>
+                        <li><i class="fas fa-check"></i> All Tactical Vehicle Features</li>
+                        <li><i class="fas fa-check"></i> GDU Military Grade Surveillance Drone</li>
+                        <li><i class="fas fa-check"></i> Onboard Launch & Recovery System</li>
+                    </ul>
+                </div>
+                <div class="package-option" data-package="drone-buster">
+                    <h3>Anti-Drone Offensive System</h3>
+                    <p>Price on Request</p>
+                    <ul>
+                        <li><i class="fas fa-check"></i> All Reconnaissance Features</li>
+                        <li><i class="fas fa-check"></i> Portable Drone Buster Integration</li>
+                        <li><i class="fas fa-check"></i> Automated Target Tracking</li>
+                    </ul>
+                    <div class="tech-specs-grid">
+                      <div class="spec-item"><span class="spec-label">Jamming Freq. (MHz)</span><span class="spec-value">900-930, 1550-1620, 2400-2500, 5715-5850</span></div>
+                      <div class="spec-item"><span class="spec-label">Output Power</span><span class="spec-value">140W</span></div>
+                      <div class="spec-item"><span class="spec-label">Control Distance</span><span class="spec-value">1700-2000m</span></div>
+                    </div>
+                </div>
+            </div>
+            <div class="call-to-action">
+                <button class="configure-build-btn">Request a Quote</button>
+                <button class="request-test-drive-btn">Schedule a Demonstration</button>
+            </div>
+        </aside>
+    </main>
+
+    <footer>
+        <div class="footer-bottom">
+            <p>&copy; 2024 Defense Tech Customs™ by Bangladesh AI Research Institute</p>
+            <div class="social-links">
+                <a href="https://www.facebook.com/"><i class="fab fa-facebook-f"></i></a>
+                <a href="https://twitter.com/"><i class="fab fa-twitter"></i></a>
+                <a href="https://www.linkedin.com/company/"><i class="fab fa-linkedin-in"></i></a>
+            </div>
+        </div>
+        <div class="creator-info">
+            <p>Founder: Mohammad Azizur Rahman (Jewel Rana)</p>
+        </div>
+    </footer>
+</body>
+</html>
